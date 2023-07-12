@@ -46,6 +46,14 @@ searchFormEl.addEventListener('submit', async event => {
     data.hits.forEach(image => {
       const card = createImageCard(image);
       galleryEl.appendChild(card);
+
+      // Плавне прокручування сторінки після запиту і відтворення кожної наступної групи зображень:
+      const { height: cardHeight } = card.getBoundingClientRect();
+
+      window.scrollBy({
+        top: cardHeight * 40,
+        behavior: 'smooth',
+      });
     });
 
     // Відображення повідомлення з кількістю знайдених зображень:
@@ -136,6 +144,14 @@ async function searchImages() {
     data.hits.forEach(image => {
       const card = createImageCard(image);
       galleryEl.appendChild(card);
+
+      // Плавне прокручування сторінки після запиту і відтворення кожної наступної групи зображень:
+      const { height: cardHeight } = card.getBoundingClientRect();
+
+      window.scrollBy({
+        top: cardHeight * 40,
+        behavior: 'smooth',
+      });
     });
 
     if (data.totalHits <= currentPage * 40) {
