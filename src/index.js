@@ -1,21 +1,16 @@
 'use strict';
+
 // Імпорт бібліотек:
 import axios from 'axios';
-import SimpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
 import notiflix from 'notiflix';
 
-// https://pixabay.com/api/docs/
-// 	Your API key: 38192027-861d4e16491b6b9cd5923fcdb
-
 // Отримання посилання на форму пошуку та галерею:
-const seachFormEl = document.querySelector('#search-form');
-const gallery = document.querySelector('.gallery');
-// console.log(seachForm);
-// console.log(gallery);
+const searchFormEl = document.querySelector('#search-form');
+const galleryEl = document.querySelector('.gallery');
+const loadMoreBtn = document.querySelector('.load-more');
 
 // Обробник подій форми пошуку:
-seachFormEl.addEventListener('submit', async event => {
+searchFormEl.addEventListener('submit', async event => {
   event.preventDefault();
 
   // Отримання значення пошукового запиту:
@@ -30,7 +25,7 @@ seachFormEl.addEventListener('submit', async event => {
         image_type: 'photo',
         orientation: 'horizontal',
         safesearch: true,
-        per_page: 40, // кількість зображень на сторінці
+        per_page: 40, // кількість зображень на сторінці при запиті
       },
     });
 
@@ -45,19 +40,19 @@ seachFormEl.addEventListener('submit', async event => {
     }
 
     // Очищення галереї перед новим пошуком:
-    gallery.innerHTML = '';
+    galleryEl.innerHTML = '';
 
     // Додавання зображення до галереї:
     data.hits.forEach(image => {
       const card = createImageCard(image);
-      gallery.appendChild(card);
+      galleryEl.appendChild(card);
     });
 
     // Відображення повідомлення з кількістю знайдених зображень:
     notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
 
     // Показ кнопки "Load more":
-    showLoadMoreButton();
+    loadMoreBtn.style.display = 'block';
   } catch (error) {
     console.error('Error:', error);
     notiflix.Notify.failure(
@@ -99,4 +94,60 @@ function createImageCard(image) {
   card.append(img, info);
 
   return card;
+}
+
+// Пагінація галереї:
+let currentPage = 1; // Значення поточної сторінки
+
+function loadMoreImages() {
+  currentPage++;
+  searchImages();
+}
+
+loadMoreBtn.addEventListener('click', loadMoreImages);
+
+// Оновлення параметра 'page' у запиті до API Pixabay (отримання наступної сторінки зображень):
+async function searchImages() {
+  const searchQuery = searchFormEl.elements.searchQuery.value;
+
+  try {
+    const response = await axios.get('https://pixabay.com/api/', {
+      params: {
+        key: '38192027-861d4e16491b6b9cd5923fcdb',
+        q: searchQuery,
+        image_type: 'photo',
+        orientation: 'horizontal',
+        safesearch: true,
+        per_page: 40,
+        page: currentPage,
+      },
+    });
+
+    const { data } = response;
+
+    if (data.hits.length === 0) {
+      notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      loadMoreBtn.style.display = 'none';
+      return;
+    }
+
+    data.hits.forEach(image => {
+      const card = createImageCard(image);
+      galleryEl.appendChild(card);
+    });
+
+    if (data.totalHits <= currentPage * 40) {
+      loadMoreBtn.style.display = 'none';
+      notiflix.Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    notiflix.Notify.failure(
+      'An error occurred while fetching images. Please try again later.'
+    );
+  }
 }
