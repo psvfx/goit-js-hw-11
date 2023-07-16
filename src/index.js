@@ -3,11 +3,18 @@
 // Імпорт бібліотек:
 import axios from 'axios';
 import notiflix from 'notiflix';
+import SimpleLightbox from 'simplelightbox';
 
 // Отримання посилання на форму пошуку та галерею:
 const searchFormEl = document.querySelector('#search-form');
 const galleryEl = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
+
+// Ініціалізація SimpleLightbox:
+const lightbox = new SimpleLightbox('.gallery a', {
+  captions: true,
+  captionDelay: 250,
+});
 
 // Обробник подій форми пошуку:
 searchFormEl.addEventListener('submit', async event => {
@@ -47,11 +54,14 @@ searchFormEl.addEventListener('submit', async event => {
       const card = createImageCard(image);
       galleryEl.appendChild(card);
 
+      // Оновлення SimpleLightbox після додавання зображень:
+      lightbox.refresh();
+
       // Плавне прокручування сторінки після запиту і відтворення кожної наступної групи зображень:
       const { height: cardHeight } = card.getBoundingClientRect();
 
       window.scrollBy({
-        top: cardHeight * 40,
+        top: cardHeight * 10,
         behavior: 'smooth',
       });
     });
@@ -69,15 +79,22 @@ searchFormEl.addEventListener('submit', async event => {
   }
 });
 
-// Функція приймання обєкту зображення та повернення розмітки картки:
+// Функція приймання об'єкту зображення та повернення розмітки картки:
 function createImageCard(image) {
   const card = document.createElement('div');
   card.classList.add('photo-card');
+
+  const link = document.createElement('a');
+  link.href = image.largeImageURL;
+  link.title = image.tags;
 
   const img = document.createElement('img');
   img.src = image.webformatURL;
   img.alt = image.tags;
   img.loading = 'lazy';
+
+  link.appendChild(img);
+  card.appendChild(link);
 
   const info = document.createElement('div');
   info.classList.add('info');
@@ -99,7 +116,7 @@ function createImageCard(image) {
   downloads.innerHTML = `<b>Downloads:</b> ${image.downloads}`;
 
   info.append(likes, views, comments, downloads);
-  card.append(img, info);
+  card.append(link, info);
 
   return card;
 }
@@ -149,12 +166,15 @@ async function searchImages() {
       const { height: cardHeight } = card.getBoundingClientRect();
 
       window.scrollBy({
-        top: cardHeight * 40,
+        top: cardHeight * 10,
         behavior: 'smooth',
       });
     });
 
-    if (data.totalHits <= currentPage * 40) {
+    // Оновлення SimpleLightbox після додавання зображень:
+    lightbox.refresh();
+
+    if (data.totalHits <= currentPage * 10) {
       loadMoreBtn.style.display = 'none';
       notiflix.Notify.info(
         "We're sorry, but you've reached the end of search results."
